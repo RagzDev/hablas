@@ -220,19 +220,38 @@ class _HablasState extends State<Hablas> {
                     height: 50,
                   ),
                   Container(
-                    height: 80,
-                    width: 80,
-                    color: Colors.grey,
+                    height: 380,
+                    width: 500,
+                    decoration: BoxDecoration(
+                        color: Colors.orange,
+                        shape: BoxShape.rectangle,
+                        borderRadius: BorderRadius.only(
+                            topLeft: Radius.circular(50.0),
+                            bottomRight: Radius.circular(50.0),
+                            bottomLeft: Radius.circular(50.0),
+                            topRight: Radius.circular(50.0))),
                     child: Column(
                       children: [
+                        SizedBox(height: 10),
+                        Text(
+                          'Settings',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w800,
+                            fontSize: 40.0,
+                          ),
+                        ),
+                        SizedBox(
+                          height: 25,
+                        ),
                         Text('Change Language',
                             style: TextStyle(
-                                fontWeight: FontWeight.bold,
+                                fontWeight: FontWeight.normal,
                                 fontSize: 20.0,
                                 color: Colors.white)),
                         _futureBuilder(),
                         SizedBox(
-                          height: 50,
+                          height: 20,
                         ),
                         _buildSliders()
                       ],
@@ -281,7 +300,7 @@ class _HablasState extends State<Hablas> {
           child:
               Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
             _buildButtonColumn(
-                Colors.red, Colors.redAccent, Icons.mic, 'PLAY', _speak),
+                Colors.red, Colors.redAccent, Icons.mic, '', _speak),
           ]));
     }
   }
@@ -292,6 +311,9 @@ class _HablasState extends State<Hablas> {
           value: language,
           items: getLanguageDropDownMenuItems(languages),
           onChanged: changedLanguageDropDownItem,
+          dropdownColor: Colors.white,
+          iconEnabledColor: Colors.white,
+          focusColor: Colors.white,
         ),
         Visibility(
           visible: isAndroid,
@@ -311,9 +333,11 @@ class _HablasState extends State<Hablas> {
               child: Icon(
                 icon,
                 color: Colors.white,
+                size: 32,
               ),
               padding: EdgeInsets.all(15.0),
               shape: CircleBorder(),
+              constraints: BoxConstraints.tight(Size(64, 64)),
               splashColor: splashColor,
               onPressed: () => func()),
           Container(
@@ -331,19 +355,21 @@ class _HablasState extends State<Hablas> {
       children: [
         Text('Volume',
             style: TextStyle(
-                fontWeight: FontWeight.bold,
+                fontWeight: FontWeight.normal,
                 fontSize: 20.0,
                 color: Colors.white)),
         _volume(),
         Text(
           'Pitch',
           style: TextStyle(
-              fontWeight: FontWeight.bold, fontSize: 20.0, color: Colors.white),
+              fontWeight: FontWeight.normal,
+              fontSize: 20.0,
+              color: Colors.white),
         ),
         _pitch(),
         Text('Rate',
             style: TextStyle(
-              fontWeight: FontWeight.bold,
+              fontWeight: FontWeight.normal,
               fontSize: 20.0,
               color: Colors.white,
             )),
