@@ -1,4 +1,4 @@
-# Speechy
+# Hablas
 
 An awesome text to speech app!
 
