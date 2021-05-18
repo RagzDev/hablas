@@ -42,8 +42,8 @@ class WelcomeScreen extends StatelessWidget {
               flex: 3,
               child: Center(
                 child: Container(
-                  height: 450,
-                  width: 500,
+                  height: 400,
+                  width: 400,
                   alignment: Alignment.center,
                   decoration: BoxDecoration(
                     image: DecorationImage(
@@ -65,14 +65,14 @@ class WelcomeScreen extends StatelessWidget {
                         text: "Hablas\n",
                         style: TextStyle(
                             color: Colors.white,
-                            fontSize: 25.0,
+                            fontSize: 20.0,
                             fontWeight: FontWeight.bold),
                       ),
                       TextSpan(
                         text: "A Text To Speech App",
                         style: TextStyle(
                           color: Colors.white,
-                          fontSize: 20.0,
+                          fontSize: 15.0,
                         ),
                       )
                     ],
@@ -88,7 +88,7 @@ class WelcomeScreen extends StatelessWidget {
                       ));
                     },
                     child: Container(
-                      height: 50,
+                      height: 41,
                       width: 120,
                       // margin: EdgeInsets.only(bottom: 25),
                       padding: EdgeInsets.symmetric(
@@ -115,7 +115,7 @@ class WelcomeScreen extends StatelessWidget {
                   ),
                 ),
                 SizedBox(
-                  height: 20,
+                  height: 10,
                 )
               ],
             ),

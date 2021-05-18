@@ -1,10 +1,9 @@
-import 'package:Hablas/ad_state.dart';
 import 'package:Hablas/welcome.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:provider/provider.dart';
-
+import 'package:bottom_navy_bar/bottom_navy_bar.dart';
 import 'dart:async';
 import 'dart:io' show Platform;
 import 'package:flutter/foundation.dart' show kIsWeb;
@@ -12,6 +11,10 @@ import 'package:provider/provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
+import 'package:avatar_glow/avatar_glow.dart';
+import 'package:flutter/material.dart';
+import 'package:highlight_text/highlight_text.dart';
+import 'package:speech_to_text/speech_to_text.dart' as stt;
 
 class Hablas extends StatefulWidget {
   @override
@@ -32,6 +35,9 @@ class _HablasState extends State<Hablas> {
 
   TtsState ttsState = TtsState.stopped;
 
+  int _currentIndex = 0;
+  PageController _pageController;
+
   get isPlaying => ttsState == TtsState.playing;
   get isStopped => ttsState == TtsState.stopped;
   get isPaused => ttsState == TtsState.paused;
@@ -44,6 +50,7 @@ class _HablasState extends State<Hablas> {
   @override
   initState() {
     super.initState();
+    _pageController = PageController();
     initTts();
   }
 
@@ -137,6 +144,8 @@ class _HablasState extends State<Hablas> {
   void dispose() {
     super.dispose();
     flutterTts.stop();
+    _pageController.dispose();
+    super.dispose();
   }
 
   List<DropdownMenuItem<String>> getLanguageDropDownMenuItems(
@@ -167,97 +176,155 @@ class _HablasState extends State<Hablas> {
     });
   }
 
-  BannerAd banner;
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    final adState = Provider.of<AdState>(context);
-    adState.initialization.then((status) {
-      setState(() {
-        banner = BannerAd(
-          adUnitId: adState.bannerAdUnitId,
-          size: AdSize.banner,
-          request: AdRequest(),
-          listener: adState.adListener,
-        )..load();
-      });
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-        home: Scaffold(
-            appBar: AppBar(
-              title: Text('Hablas'),
-              centerTitle: true,
-              backgroundColor: Colors.orange,
-              leading: IconButton(
-                  icon: Icon(Icons.arrow_back),
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => MyApp()),
-                    );
-                  }),
-            ),
-            body: SingleChildScrollView(
-                scrollDirection: Axis.vertical,
-                child: Column(children: [
-                  if (banner == null)
-                    SizedBox(
-                      height: 50,
-                    )
-                  else
-                    Container(
-                      height: 50,
-                      child: AdWidget(ad: banner),
+        home: DefaultTabController(
+            length: 2,
+            child: Scaffold(
+              body: SizedBox.expand(
+                child: PageView(
+                  controller: _pageController,
+                  onPageChanged: (index) {
+                    setState(() => _currentIndex = index);
+                  },
+                  children: <Widget>[
+                    Scaffold(
+                      appBar: AppBar(
+                        title: Text('Text To Speech'),
+                        centerTitle: true,
+                        backgroundColor: Colors.orange,
+                        leading: IconButton(
+                          icon: Icon(Icons.arrow_back),
+                          onPressed: () {
+                            Navigator.push(context,
+                                MaterialPageRoute(builder: (context) {
+                              return MyApp();
+                            }));
+                          },
+                        ),
+                        //                                                                 leading: IconButton(
+                        //   icon: Icon(Icons.arrow_back),
+                        //   onPressed: () {
+                        // Navigator.push(context,
+                        //                 MaterialPageRoute(
+                        //               builder: (context) {
+                        //                 return MyApp();
+                        //               }
+                        //   }
+                        // ),
+                      ),
+                      floatingActionButton: _buildButtonColumn(
+                          Colors.red, Colors.redAccent, Icons.mic, '', _speak),
+                      floatingActionButtonLocation:
+                          FloatingActionButtonLocation.centerFloat,
+                      body: SingleChildScrollView(
+                          scrollDirection: Axis.vertical,
+                          child: Column(children: [
+                            _inputSection(),
+                            // _btnSection(),
+                            SizedBox(
+                              height: 50,
+                            ),
+                          ])),
                     ),
-                  _inputSection(),
-                  _btnSection(),
-                  SizedBox(
-                    height: 50,
+                    SpeechScreen(),
+                    Scaffold(
+                        appBar: AppBar(
+                          title: Text('Settings'),
+                          centerTitle: true,
+                          backgroundColor: Colors.orange,
+                        ),
+                        backgroundColor: Colors.white,
+                        body: SingleChildScrollView(
+                          scrollDirection: Axis.vertical,
+                          child: Container(
+                              margin: EdgeInsets.only(top: 55),
+                              decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  shape: BoxShape.rectangle,
+                                  borderRadius: BorderRadius.only(
+                                      topLeft: Radius.circular(50.0),
+                                      bottomRight: Radius.circular(50.0),
+                                      bottomLeft: Radius.circular(50.0),
+                                      topRight: Radius.circular(50.0))),
+                              child: Center(
+                                child: Column(
+                                  children: [
+                                    Text(
+                                      'Settings',
+                                      style: TextStyle(
+                                        color: Colors.black,
+                                        fontWeight: FontWeight.w800,
+                                        fontSize: 40.0,
+                                      ),
+                                    ),
+                                    SizedBox(
+                                      height: 45,
+                                    ),
+                                    Text('Change Language',
+                                        style: TextStyle(
+                                            fontWeight: FontWeight.w700,
+                                            fontSize: 20.0,
+                                            color: Colors.black)),
+                                    SizedBox(
+                                      height: 20,
+                                    ),
+                                    Text(
+                                        'The format is language-country, so for example, English US would be en-US.',
+                                        textAlign: TextAlign.center,
+                                        style: TextStyle(
+                                            fontWeight: FontWeight.normal,
+                                            fontSize: 18.0,
+                                            color: Colors.black)),
+                                    _futureBuilder(),
+                                    Visibility(
+                                      visible: isAndroid,
+                                      child: Text(
+                                        "Is Selected Language Installed: $isCurrentLanguageInstalled",
+                                        style: TextStyle(
+                                            color: Colors.black,
+                                            fontSize: 20.0),
+                                      ),
+                                    ),
+                                    SizedBox(
+                                      height: 20,
+                                    ),
+                                    _buildSliders(),
+                                  ],
+                                ),
+                              )),
+                        )),
+                  ],
+                ),
+              ),
+              bottomNavigationBar: BottomNavyBar(
+                selectedIndex: _currentIndex,
+                onItemSelected: (index) {
+                  setState(() => _currentIndex = index);
+                  _pageController.jumpToPage(index);
+                },
+                items: <BottomNavyBarItem>[
+                  BottomNavyBarItem(
+                      title: Text('Text'),
+                      icon: Icon(Icons.text_fields),
+                      activeColor: Colors.blue,
+                      inactiveColor: Colors.orange),
+                  BottomNavyBarItem(
+                    title: Text('Speech'),
+                    icon: Icon(Icons.mic),
+                    activeColor: Colors.blue,
+                    inactiveColor: Colors.orange,
                   ),
-                  Container(
-                    height: 380,
-                    width: 500,
-                    decoration: BoxDecoration(
-                        color: Colors.orange,
-                        shape: BoxShape.rectangle,
-                        borderRadius: BorderRadius.only(
-                            topLeft: Radius.circular(50.0),
-                            bottomRight: Radius.circular(50.0),
-                            bottomLeft: Radius.circular(50.0),
-                            topRight: Radius.circular(50.0))),
-                    child: Column(
-                      children: [
-                        SizedBox(height: 10),
-                        Text(
-                          'Settings',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w800,
-                            fontSize: 40.0,
-                          ),
-                        ),
-                        SizedBox(
-                          height: 25,
-                        ),
-                        Text('Change Language',
-                            style: TextStyle(
-                                fontWeight: FontWeight.normal,
-                                fontSize: 20.0,
-                                color: Colors.white)),
-                        _futureBuilder(),
-                        SizedBox(
-                          height: 20,
-                        ),
-                        _buildSliders()
-                      ],
-                    ),
-                  ),
-                ]))));
+                  BottomNavyBarItem(
+                    title: Text('Settings'),
+                    icon: Icon(Icons.settings),
+                    activeColor: Colors.blue,
+                    inactiveColor: Colors.orange,
+                  )
+                ],
+              ),
+            )));
   }
 
   Widget _futureBuilder() => FutureBuilder<dynamic>(
@@ -280,7 +347,12 @@ class _HablasState extends State<Hablas> {
         },
         obscureText: false,
         decoration: InputDecoration(
-            border: OutlineInputBorder(), hintText: 'Type to Dictate!'),
+          hintText: 'Type to Dictate!',
+          hintStyle: TextStyle(fontSize: 16),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+        ),
       ));
 
   Widget _btnSection() {
@@ -289,10 +361,8 @@ class _HablasState extends State<Hablas> {
           padding: EdgeInsets.only(top: 50.0),
           child:
               Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
-            _buildButtonColumn(Colors.green, Colors.greenAccent,
-                Icons.play_arrow, 'PLAY', _speak),
             _buildButtonColumn(
-                Colors.red, Colors.redAccent, Icons.stop, 'STOP', _stop),
+                Colors.red, Colors.redAccent, Icons.mic, ' ', _speak),
           ]));
     } else {
       return Container(
@@ -311,13 +381,6 @@ class _HablasState extends State<Hablas> {
           value: language,
           items: getLanguageDropDownMenuItems(languages),
           onChanged: changedLanguageDropDownItem,
-          dropdownColor: Colors.white,
-          iconEnabledColor: Colors.white,
-          focusColor: Colors.white,
-        ),
-        Visibility(
-          visible: isAndroid,
-          child: Text("Is installed: $isCurrentLanguageInstalled"),
         ),
       ]));
 
@@ -357,21 +420,21 @@ class _HablasState extends State<Hablas> {
             style: TextStyle(
                 fontWeight: FontWeight.normal,
                 fontSize: 20.0,
-                color: Colors.white)),
+                color: Colors.black)),
         _volume(),
         Text(
           'Pitch',
           style: TextStyle(
               fontWeight: FontWeight.normal,
               fontSize: 20.0,
-              color: Colors.white),
+              color: Colors.black),
         ),
         _pitch(),
-        Text('Rate',
+        Text('Speed/Rate',
             style: TextStyle(
               fontWeight: FontWeight.normal,
               fontSize: 20.0,
-              color: Colors.white,
+              color: Colors.black,
             )),
         _rate()
       ],
@@ -419,210 +482,117 @@ class _HablasState extends State<Hablas> {
   }
 }
 
-// class TTS extends StatefulWidget {
-//   @override
-//   _TTSState createState() => _TTSState();
-// }
+class SpeechScreen extends StatefulWidget {
+  @override
+  _SpeechScreenState createState() => _SpeechScreenState();
+}
 
-// class _TTSState extends State {
-//   bool isPlaying = false;
-//   FlutterTts _flutterTts;
-//   final textController = TextEditingController();
-//   BannerAd banner;
+class _SpeechScreenState extends State<SpeechScreen> {
+  final Map<String, HighlightedWord> _highlights = {
+    'Hablas': HighlightedWord(
+      onTap: () => print('voice'),
+      textStyle: const TextStyle(
+        color: Colors.green,
+        fontWeight: FontWeight.bold,
+      ),
+    ),
+  };
 
-//   @override
-//   void didChangeDependencies() {
-//     super.didChangeDependencies();
-//     final adState = Provider.of<AdState>(context);
-//     adState.initialization.then((status) {
-//       setState(() {
-//         banner = BannerAd(
-//           adUnitId: adState.bannerAdUnitId,
-//           size: AdSize.banner,
-//           request: AdRequest(),
-//           listener: adState.adListener,
-//         )..load();
-//       });
-//     });
-//   }
+  stt.SpeechToText _speech;
+  bool _isListening = false;
+  String _text = 'Press the button and start speaking';
+  double _confidence = 1.0;
 
-//   @override
-//   void initState() {
-//     super.initState();
-//     initializeTts();
-//   }
+  @override
+  void initState() {
+    super.initState();
+    _speech = stt.SpeechToText();
+  }
 
-//   @override
-//   Widget build(BuildContext context) {
-//     return MaterialApp(home: Builder(
-//       builder: (BuildContext context) {
-//         return DefaultTabController(
-//           length: 2,
-//           child: Scaffold(
-//             appBar: AppBar(
-//               centerTitle: true,
-//               title: Text('Hablas'),
-//               backgroundColor: Colors.orange,
-//               leading: IconButton(
-//                   icon: Icon(Icons.arrow_back),
-//                   onPressed: () {
-//                     Navigator.push(
-//                       context,
-//                       MaterialPageRoute(builder: (context) => MyApp()),
-//                     );
-//                   }),
-//               bottom: TabBar(
-//                 tabs: [
-//                   Tab(icon: Icon(Icons.mic)),
-//                   Tab(icon: Icon(Icons.settings)),
-//                 ],
-//               ),
-//             ),
-//             body: TabBarView(
-//               children: [
-//                 Scaffold(
-//                     body: Container(
-//                   alignment: Alignment.center,
-//                   child: Column(
-//                     children: <Widget>[
-//                       if (banner == null)
-//                         SizedBox(
-//                           height: 50,
-//                         )
-//                       else
-//                         Container(
-//                           height: 50,
-//                           child: AdWidget(ad: banner),
-//                         ),
-//                       Center(
-//                           child: Container(
-//                         padding: EdgeInsets.all(32),
-//                         child: TextField(
-//                           controller: textController,
-//                           obscureText: false,
-//                           decoration: InputDecoration(
-//                               border: OutlineInputBorder(),
-//                               hintText: 'Type to Dictate!'),
-//                         ),
-//                       )),
-//                       RawMaterialButton(
-//                         onPressed: () {
-//                           if (isPlaying) {
-//                             _stop();
-//                           } else {
-//                             _speak(textController.text);
-//                           }
-//                         },
-//                         elevation: 2.0,
-//                         fillColor: Colors.red,
-//                         child: Icon(
-//                           Icons.mic,
-//                           size: 35.0,
-//                           color: Colors.white,
-//                         ),
-//                         padding: EdgeInsets.all(15.0),
-//                         shape: CircleBorder(),
-//                       ),
-//                       SizedBox(height: 20),
-//                     ],
-//                   ),
-//                 )),
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Speech To Text'),
+        centerTitle: true,
+        backgroundColor: Colors.orange,
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
+      floatingActionButton: AvatarGlow(
+        animate: _isListening,
+        glowColor: Colors.red,
+        endRadius: 75.0,
+        duration: const Duration(milliseconds: 2000),
+        repeatPauseDuration: const Duration(milliseconds: 100),
+        repeat: true,
+        child: RawMaterialButton(
+            onPressed: _listen,
+            child: Icon(
+              _isListening ? Icons.mic : Icons.mic_none,
+              size: 32,
+              color: Colors.white,
+            ),
+            fillColor: Colors.red,
+            elevation: 2.0,
+            padding: EdgeInsets.all(15.0),
+            shape: CircleBorder(),
+            constraints: BoxConstraints.tight(Size(64, 64)),
+            splashColor: Colors.red),
+      ),
+      body: SingleChildScrollView(
+        reverse: true,
+        child: Container(
+            padding: const EdgeInsets.fromLTRB(30.0, 30.0, 30.0, 150.0),
+            width: double.infinity,
+            child: Column(
+              children: [
+                Text(
+                  'AI Confidence Level: ${(_confidence * 100.0).toStringAsFixed(1)}%',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 32.0,
+                    color: Colors.black,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                SizedBox(
+                  height: 50,
+                ),
+                TextHighlight(
+                  text: _text,
+                  words: _highlights,
+                  textAlign: TextAlign.center,
+                  textStyle: const TextStyle(
+                      fontSize: 32.0,
+                      color: Colors.black,
+                      fontWeight: FontWeight.w400),
+                ),
+              ],
+            )),
+      ),
+    );
+  }
 
-//                 Settings(),
-//                 // Column(
-//                 //   children: [
-//                 //     // Image(
-//                 //     //   image: AssetImage('assets/bug.png'),
-//                 //     //   height: 350,
-//                 //     //   width: 350,
-//                 //     // ),
-//                 //     // Text(
-//                 //     //   'Still in Construction...',
-//                 //     //   style:
-//                 //     //       TextStyle(fontWeight: FontWeight.bold, fontSize: 30),
-//                 //     // ),
-//                 //     // Text(
-//                 //     //   'Created by Raghav Sarin',
-//                 //     //   style: TextStyle(fontSize: 25),
-//                 //     // ),
-//                 //     // SizedBox(
-//                 //     //   height: 50,
-//                 //     // )
-//                 //   ],
-//                 // )
-//               ],
-//             ),
-//           ),
-//         );
-
-//         // return
-//       },
-//     ));
-//   }
-
-//   //TEXT TO SPEECH functions
-
-//   initializeTts() {
-//     _flutterTts = FlutterTts();
-
-//     _flutterTts.setStartHandler(() {
-//       setState(() {
-//         isPlaying = true;
-//       });
-//     });
-
-//     _flutterTts.setCompletionHandler(() {
-//       setState(() {
-//         isPlaying = false;
-//       });
-//     });
-
-//     _flutterTts.setErrorHandler((err) {
-//       setState(() {
-//         print("error occurred: " + err);
-//         isPlaying = false;
-//       });
-//     });
-//   }
-
-//   Future _speak(String text) async {
-//     if (text != null && text.isNotEmpty) {
-//       var result = await _flutterTts.speak(textController.text);
-//       if (result == 1)
-//         setState(() {
-//           isPlaying = true;
-//         });
-//     }
-//     setTtsLanguage();
-//     setPitch();
-//     setVolume();
-//   }
-
-//   Future _stop() async {
-//     var result = await _flutterTts.stop();
-//     if (result == 1)
-//       setState(() {
-//         isPlaying = false;
-//       });
-//   }
-
-//   void setTtsLanguage() async {
-//     await _flutterTts.setLanguage("en-GB");
-//   }
-
-//   void setPitch() async {
-//     await _flutterTts.setPitch(1);
-//   }
-
-//   void setVolume() async {
-//     await _flutterTts.setVolume(1.0);
-//     await _flutterTts.setIosAudioCategory(IosTextToSpeechAudioCategory.playback,
-//         [IosTextToSpeechAudioCategoryOptions.defaultToSpeaker]);
-//   }
-
-//   @override
-//   void dispose() {
-//     super.dispose();
-//     _flutterTts.stop();
-//   }
-// }
+  void _listen() async {
+    if (!_isListening) {
+      bool available = await _speech.initialize(
+        onStatus: (val) => print('onStatus: $val'),
+        onError: (val) => print('onError: $val'),
+      );
+      if (available) {
+        setState(() => _isListening = true);
+        _speech.listen(
+          onResult: (val) => setState(() {
+            _text = val.recognizedWords;
+            if (val.hasConfidenceRating && val.confidence > 0) {
+              _confidence = val.confidence;
+            }
+          }),
+        );
+      }
+    } else {
+      setState(() => _isListening = false);
+      _speech.stop();
+    }
+  }
+}
